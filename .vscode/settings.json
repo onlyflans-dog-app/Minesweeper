@@ -1,0 +1,10 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/david/Workspaces/git/onlyflans-dog-app/Minesweeper/bin/lnx",
+            "binaryPath": "/home/david/Workspaces/git/onlyflans-dog-app/Minesweeper/bin/lnx/template.elf",
+            "binaryArgs": []
+        }
+    ]
+}
