@@ -11,6 +11,7 @@ enum gameMode{
 
     GAME_MODE_NEWGAME,
     GAME_MODE_GAME,
+    GAME_MODE_WIN,
 
     GAME_MODE_SETTINGS,
     GAME_MODE_ABOUT,

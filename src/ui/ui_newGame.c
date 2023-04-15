@@ -15,6 +15,7 @@ nk_bool expert = nk_false;
 
 #define mine 'X'
 #define empty 'E'
+#define flag 'F'
 
 int ui_newGame_menu(struct sdlContexts* s)
 {
@@ -85,37 +86,85 @@ int ui_newGame_menu(struct sdlContexts* s)
 }
 
 
+int timer = 0;
+int timerHold = 0;
+time_t start = 0;
+
 int ui_game_menu(struct sdlContexts* s)
 {
     struct nk_context *ctx = s->g;
 
-    int init = 0;
+    static int init = 0;
+
+    static struct images cucumber;
+    static struct nk_image nkcucumber = {0};
+
+    static struct images flanpaw;
+    static struct nk_image nkflanpaw = {0};
+
+
+    static int pause = 1;
+    int found = 0;
+
     int i = 0;
     int j = 0;
     char str[10];
     nk_bool ret = nk_false;
 
-    struct images cucumber;
-    struct nk_image nkcucumber = {0};
-    struct images flan;
-
     if(init == 0){
         init = 1;
         image_load(s, &cucumber, "./res/cucumber.png");
         nkcucumber = nk_image_ptr(cucumber.t);
+
+        image_load(s, &flanpaw, "./res/pawflan.png");
+        nkflanpaw = nk_image_ptr(flanpaw.t);
+
+        start = time(NULL);
+
+        timer = 0;
+        timerHold = 0;
+    }
+
+    if(s->gameState == GAME_MODE_WIN){
+        pause = 1;
     }
 
     if(nk_begin(ctx, "Game Menu", nk_rect(0, 0, s->res.w, s->res.h), NK_WINDOW_BACKGROUND | NK_WINDOW_NO_SCROLLBAR)){
-        nk_layout_row_dynamic(ctx, 30, 3);
+        nk_layout_row_dynamic(ctx, 30, 5);
 
         if(nk_button_label(ctx, "Back")){
             s->gameState = GAME_MODE_MAIN;
         }
 
-        nk_label(ctx, " ", NK_TEXT_CENTERED);
+        nk_spacer(ctx);
+
+        // update timer
+        if(pause == 0){
+            timer = time(NULL) - start;
+        } else {
+            timerHold += timer;
+            timer = 0;
+            start = time(NULL);
+        }
+        
+        if(s->gameState == GAME_MODE_WIN){
+            sprintf(str, "WIN: %d", timer+timerHold);
+        } else {
+            sprintf(str, "%d", timer+timerHold);
+        }
+
+        if(nk_button_label(ctx, str)){
+            pause = !pause;
+        }
+
+        nk_spacer(ctx);
 
         if(nk_button_label(ctx, "Reset")){
             mine_newMinefield(mapSizeX, mapSizeY, nbMine);
+            timer = 0;
+            timerHold = 0;
+            pause = 1;
+            s->gameState = GAME_MODE_GAME;
         }
 
         nk_layout_row_dynamic(ctx, 30, 1);
@@ -135,6 +184,8 @@ int ui_game_menu(struct sdlContexts* s)
                     sprintf(str, "X");
                 } else if(playerGrid[i][j] == 'E'){
                     sprintf(str, "E");
+                }  else if(playerGrid[i][j] == 'F'){
+                    sprintf(str, "F");
                 } else {
                     sprintf(str, "%d", playerGrid[i][j]);
                 } 
@@ -181,43 +232,83 @@ int ui_game_menu(struct sdlContexts* s)
                 button2->draw_begin      = 0;
                 button2->draw_end        = 0;
 
-               // nk_button_label_styled(struct nk_context *ctx, const struct nk_style_button *style, const char *title)
-
                 ret = 0;
-                if(playerGrid[i][j] == 'E'){
-                    ret = nk_button_label(ctx, " ");
-                } else if(playerGrid[i][j] == 'X'){
-                    ret = nk_button_image_styled(ctx, button2, nkcucumber);
-                    
-                    //nk_button_image_stealth(ctx, nkcucumber);
-                    //ret = nk_button_label(ctx, "X");
-                } else if(playerGrid[i][j] == 0){
-                    ret = nk_button_label_styled(ctx, button, "");
-                    //ret = nk_button_label(ctx, "0");
+                if(pause == 0){
+                    if(playerGrid[i][j] == 'E'){
+                        ret = nk_button_label(ctx, " ");
+                    } else if(playerGrid[i][j] == 'X'){
+                        ret = nk_button_image_styled(ctx, button2, nkcucumber);
+                    } else if(playerGrid[i][j] == 'F'){
+                        ret = nk_button_image(ctx, nkflanpaw);
+                    } else if(playerGrid[i][j] == 0){
+                        ret = nk_button_label_styled(ctx, button, "");
+                    } else {
+                        nk_button_label_styled(ctx, button, str);
+                    }
                 } else {
-                    nk_button_label_styled(ctx, button, str);
-                    //ret = nk_button_label(ctx, str);
+                    if(playerGrid[i][j] == 'E'){
+                        ret = nk_button_label(ctx, " ");
+                    } else if(playerGrid[i][j] == 'F'){
+                        nk_button_label(ctx, " ");
+                    } else {
+                        nk_button_label_styled(ctx, button, " ");
+                    }
+
+                    if(ret){
+                        pause = 0;
+                    }
+                    
+                }
+                if(s->gameState == GAME_MODE_WIN){
+                    pause = 1;
+                    ret = 0;
+                }
+
+                if(playerGrid[i][j] == 'F' && grid[i][j] == 'X' && found != -1){
+                    found++;
+                } else if(playerGrid[i][j] == 'F' && grid[i][j] != 'X'){
+                    found = -1;
                 }
 
                 if(ret){
-                    if(playerGrid[i][j] == 'E'){
-                        if(grid[i][j] == 0){
-                            playerGrid[i][j] = grid[i][j];
-                            while(mine_revealZero());
-                        }
-                        if(grid[i][j] == 'X'){
-                            //s->gameState = GAME_MODE_GAMEOVER;
-                            // reveal all map
-                            for(i = 0; i < mapSizeX; i++){
-                                for(j = 0; j < mapSizeY; j++){
-                                    playerGrid[i][j] = grid[i][j];
+                    if(s->now.mouse_buttons&1){
+                        if(playerGrid[i][j] == 'E'){
+                            if(grid[i][j] == 0){
+                                playerGrid[i][j] = grid[i][j];
+                                while(mine_revealZero());
+                            }
+                            if(grid[i][j] == 'X'){
+                                //s->gameState = GAME_MODE_GAMEOVER;
+                                // reveal all map
+                                for(i = 0; i < mapSizeX; i++){
+                                    for(j = 0; j < mapSizeY; j++){
+                                        playerGrid[i][j] = grid[i][j];
+                                    }
                                 }
                             }
+                            playerGrid[i][j] = grid[i][j];
                         }
+                    } else if(s->now.mouse_buttons&4){
+                        printf("%d\r\n", grid[i][j]);
+                        if(playerGrid[i][j] == 'E'){
+                            playerGrid[i][j] = 'F';
+                        } else if(playerGrid[i][j] == 'F'){
+                            playerGrid[i][j] = 'E';
+                        }
+                    }
+                }
+            }
+        }
+        if(found == nbMine){
+            printf("You win !\r\n");
+            for(i = 0; i < mapSizeX; i++){
+                for(j = 0; j < mapSizeY; j++){
+                    if(grid[i][j] != 'X'){
                         playerGrid[i][j] = grid[i][j];
                     }
                 }
             }
+            s->gameState = GAME_MODE_WIN;
         }
     }
     nk_end(ctx);
@@ -287,6 +378,10 @@ int mine_newMinefield(int x, int y, int nb)
     int i, j;
 
     srand(time(NULL));  // initialize random seed
+
+    start = time(NULL);
+    timer = 0;
+    timerHold = 0;
     
     // zero minefield
     for(i = 0; i < x; i++){
@@ -297,10 +392,15 @@ int mine_newMinefield(int x, int y, int nb)
 
     // place mines as -1
     for(i = 0; i < nb; i++){
-        int x = rand() % mapSizeX;
-        int y = rand() % mapSizeY;
+        int x, y;
+        do{
+            x = rand() % mapSizeX;
+            y = rand() % mapSizeY;
+        }while(grid[x][y] == 'X');
         grid[x][y] = 'X';
     }
+
+    //place mines as 'X' if already a mine, retry
 
     // count adjacent mines
     for(i = 0; i < x; i++){

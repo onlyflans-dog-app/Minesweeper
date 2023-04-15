@@ -1,7 +1,7 @@
 #pragma once
 
 #define SOFTNAME    "Purin's Minesweeper"
-#define SOFTVERSION "00.00.01-dev"
+#define SOFTVERSION "01.00.00"
 #define SOFTAUTHOR  "onlyflans.dog"
 #define SOFTYEAR    "2023"
 

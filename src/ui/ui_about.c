@@ -19,13 +19,13 @@ int ui_about_menu(struct sdlContexts* s)
 
         nk_spacer(ctx);
         if(nk_button_label(ctx, "About Inukai Purin")){
-            ca6Utils_openWebpage("https://onlyflans.dog/about/inukaipurin");
+            ca6Utils_openWebpage("https://twitter.com/inukaipurin");
         }
         nk_spacer(ctx);
 
         nk_spacer(ctx);
         if(nk_button_label(ctx, "About OnlyFlans")){
-            ca6Utils_openWebpage("https://onlyflans.dog/about/onlyflans");
+            ca6Utils_openWebpage("https://onlyflans.dog");
         }
         nk_spacer(ctx);
 

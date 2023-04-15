@@ -129,6 +129,7 @@ int main(int argc, char* argv[])
                     ui_newGame_menu(&sc);
                 break;
                 case GAME_MODE_GAME:
+                case GAME_MODE_WIN:
                     ui_game_menu(&sc);
                 break;
 

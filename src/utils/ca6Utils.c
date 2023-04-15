@@ -2,19 +2,22 @@
 #include "ca6Utils.h"
 
 
+#ifdef __CYGWIN__
+#include "Windows.h"
+#endif
 
 int ca6Utils_openWebpage(char* url)
 {
-    char command[256];
-    #ifdef _WIN32
-        snprintf(command, sizeof(command), "start %s", url);
-        system(command);
-    #elif defined(__linux__)
+    #ifdef __CYGWIN__
+        ShellExecute(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL);
+    #endif
+        
+    #ifdef __LINUX__
+        char command[256];
         snprintf(command, sizeof(command), "xdg-open %s", url);
         system(command);
-    #else
-        // Unsupported platform
     #endif
+
     return 0;
 }
 
